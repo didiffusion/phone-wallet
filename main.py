@@ -27,6 +27,7 @@ Implement a program that will feature users, credit cards, and payment feeds.
 import re
 import unittest
 import uuid
+import datetime
 
 
 class UsernameException(Exception):
@@ -49,6 +50,7 @@ class Payment:
         self.actor = actor
         self.target = target
         self.note = note
+        self.timestamp = datetime.datetime.now()
  
 
 class User:
@@ -56,6 +58,7 @@ class User:
     def __init__(self, username):
         self.credit_card_number = None
         self.balance = 0.0
+        self.payments = []
 
         if self._is_valid_username(username):
             self.username = username
@@ -63,9 +66,8 @@ class User:
             raise UsernameException('Username not valid.')
 
 
-    def retrieve_feed(self):
-        # TODO: add code here
-        return []
+    def retrieve_activity(self):
+        return sorted(self.payments, key=lambda p: p.timestamp, reverse=True)
 
     def add_friend(self, new_friend):
         # TODO: add code here
@@ -115,6 +117,8 @@ class User:
 
         self._charge_credit_card(self.credit_card_number)
         payment = Payment(amount, self, target, note)
+        self.payments.append(payment)
+        target.payments.append(payment)
         target.add_to_balance(amount)
 
         return payment
@@ -132,6 +136,8 @@ class User:
             raise PaymentException('Insufficient balance.')
             
         payment = Payment(amount, self, target, note)
+        self.payments.append(payment)
+        target.payments.append(payment)
         self.balance -= amount
         target.add_to_balance(amount)
         
@@ -156,10 +162,8 @@ class MiniVenmo:
         return user
 
     def render_feed(self, feed):
-        # Bobby paid Carol $5.00 for Coffee
-        # Carol paid Bobby $15.00 for Lunch
-        # TODO: add code here
-        pass
+        for payment in feed:
+            print(f"{payment.actor.username} paid {payment.target.username} ${payment.amount:.2f} for {payment.note}")
 
     @classmethod
     def run(cls):
