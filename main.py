@@ -216,11 +216,57 @@ class MiniVenmo:
 
 
 class TestUser(unittest.TestCase):
+    def setUp(self):
+        self.venmo = MiniVenmo()
+        self.user1 = self.venmo.create_user("testuser1", 100.0, "4111111111111111")
+        self.user2 = self.venmo.create_user("testuser2", 50.0, "4242424242424242")
 
-    def test_this_works(self):
+    def test_user_creation(self):
+        self.assertEqual(self.user1.username, "testuser1")
+        self.assertEqual(self.user1.balance, 100.0)
+        self.assertEqual(self.user1.credit_card_number, "4111111111111111")
+
+    def test_invalid_username(self):
         with self.assertRaises(UsernameException):
-            raise UsernameException()
+            User("invalid@user")
 
+    def test_payment_with_balance(self):
+        payment = self.user1.pay(self.user2, 30.0, "Test payment")
+        self.assertEqual(self.user1.balance, 70.0)
+        self.assertEqual(self.user2.balance, 80.0)
+        self.assertEqual(len(self.user1.activities), 1)
+        self.assertEqual(len(self.user2.activities), 1)
+
+    def test_payment_with_card(self):
+        payment = self.user1.pay(self.user2, 120.0, "Large payment")
+        self.assertEqual(self.user1.balance, 100.0)  # Balance shouldn't change
+        self.assertEqual(self.user2.balance, 170.0)
+
+    def test_add_friend(self):
+        self.user1.add_friend(self.user2)
+        self.assertIn(self.user2, self.user1.friends)
+        self.assertIn(self.user1, self.user2.friends)
+        self.assertEqual(len(self.user1.activities), 1)
+        self.assertEqual(len(self.user2.activities), 1)
+
+    def test_feed_rendering(self):
+        self.user1.pay(self.user2, 10.0, "Coffee")
+        self.user1.add_friend(self.user2)
+        feed = self.user1.retrieve_activity()
+        self.assertEqual(len(feed), 2)
+
+    def test_self_payment(self):
+        with self.assertRaises(PaymentException):
+            self.user1.pay(self.user1, 10.0, "Invalid")
+
+    def test_duplicate_friend(self):
+        self.user1.add_friend(self.user2)
+        with self.assertRaises(UsernameException):
+            self.user1.add_friend(self.user2)
+
+    def test_negative_payment(self):
+        with self.assertRaises(PaymentException):
+            self.user1.pay(self.user2, -10.0, "Invalid")
 
 if __name__ == '__main__':
     unittest.main()
