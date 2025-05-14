@@ -42,15 +42,19 @@ class CreditCardException(Exception):
     pass
 
 
-class Payment:
+class Activity:
+    def __init__(self):
+        self.id = str(uuid.uuid4())
+        self.timestamp = datetime.datetime.now()
+
+class Payment(Activity):
 
     def __init__(self, amount, actor, target, note):
-        self.id = str(uuid.uuid4())
+        super().__init__()
         self.amount = float(amount)
         self.actor = actor
         self.target = target
         self.note = note
-        self.timestamp = datetime.datetime.now()
  
 
 class User:
@@ -58,7 +62,7 @@ class User:
     def __init__(self, username):
         self.credit_card_number = None
         self.balance = 0.0
-        self.payments = []
+        self.activities = []
         self.friends = []
 
         if self._is_valid_username(username):
@@ -68,7 +72,7 @@ class User:
 
 
     def retrieve_activity(self):
-        return sorted(self.payments, key=lambda p: p.timestamp, reverse=True)
+        return sorted(self.activities, key=lambda a: a.timestamp, reverse=True)
 
     def add_friend(self, new_friend):
         if self.username == new_friend.username:
@@ -79,6 +83,11 @@ class User:
             
         self.friends.append(new_friend)
         new_friend.friends.append(self)
+        
+        # Record friend activity for both users
+        friend_activity = FriendActivity(self, new_friend)
+        self.activities.append(friend_activity)
+        new_friend.activities.append(friend_activity)
 
     def add_to_balance(self, amount):
         self.balance += float(amount)
@@ -124,8 +133,8 @@ class User:
 
         self._charge_credit_card(self.credit_card_number)
         payment = Payment(amount, self, target, note)
-        self.payments.append(payment)
-        target.payments.append(payment)
+        self.activities.append(payment)
+        target.activities.append(payment)
         target.add_to_balance(amount)
 
         return payment
@@ -143,8 +152,8 @@ class User:
             raise PaymentException('Insufficient balance.')
             
         payment = Payment(amount, self, target, note)
-        self.payments.append(payment)
-        target.payments.append(payment)
+        self.activities.append(payment)
+        target.activities.append(payment)
         self.balance -= amount
         target.add_to_balance(amount)
         
