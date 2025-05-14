@@ -59,6 +59,7 @@ class User:
         self.credit_card_number = None
         self.balance = 0.0
         self.payments = []
+        self.friends = []
 
         if self._is_valid_username(username):
             self.username = username
@@ -70,8 +71,14 @@ class User:
         return sorted(self.payments, key=lambda p: p.timestamp, reverse=True)
 
     def add_friend(self, new_friend):
-        # TODO: add code here
-        pass
+        if self.username == new_friend.username:
+            raise UsernameException('Cannot add yourself as friend')
+            
+        if new_friend in self.friends:
+            raise UsernameException('User is already a friend')
+            
+        self.friends.append(new_friend)
+        new_friend.friends.append(self)
 
     def add_to_balance(self, amount):
         self.balance += float(amount)
