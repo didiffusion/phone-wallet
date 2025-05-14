@@ -57,6 +57,15 @@ class Payment(Activity):
         self.note = note
  
 
+class FriendActivity(Activity):
+    def __init__(self, actor, target):
+        super().__init__()
+        self.actor = actor
+        self.target = target
+
+    def __str__(self):
+        return f"{self.actor.username} and {self.target.username} became friends"
+
 class User:
 
     def __init__(self, username):
@@ -178,8 +187,11 @@ class MiniVenmo:
         return user
 
     def render_feed(self, feed):
-        for payment in feed:
-            print(f"{payment.actor.username} paid {payment.target.username} ${payment.amount:.2f} for {payment.note}")
+        for activity in feed:
+            if isinstance(activity, Payment):
+                print(f"{activity.actor.username} paid {activity.target.username} ${activity.amount:.2f} for {activity.note}")
+            elif isinstance(activity, FriendActivity):
+                print(str(activity))
 
     @classmethod
     def run(cls):
